@@ -31,8 +31,10 @@ class LinearRegressionGD:
 
         if X.ndim != 2:
             raise ValueError("X must be a 2D array.")
-        if y.ndim != 1 or X.shape[0] != y.shape[0]:
-            raise ValueError("y must be a 1D array with one target per row of X.")
+        if y.ndim != 1:
+            raise ValueError("y must be a 1D array.")
+        if X.shape[0] != y.shape[0]:
+            raise ValueError("X and y must have the same row count.")
 
         n_samples = X.shape[0]
         X_aug = np.c_[np.ones(n_samples), X]

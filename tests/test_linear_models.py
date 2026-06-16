@@ -1,11 +1,13 @@
 import numpy as np
 from sklearn.linear_model import LinearRegression as SklearnLinearRegression
 from sklearn.linear_model import Ridge as SklearnRidge
+from sklearn.linear_model import LogisticRegression as SklearnLogisticRegression
 
 from src.linear_regression import LinearRegression
 from src.linear_regression_gd import LinearRegressionGD
 from src.ridge_regression import RidgeRegression
 from src.lasso_regression import LassoRegression
+from src.logistic_regression import LogisticRegression
 
 def test_linear_regression_matches_sklearn_predictions():
     rng = np.random.default_rng(42)
@@ -55,3 +57,29 @@ def test_lasso_regression_shrinks_some_coefficients():
     assert model.coef_ is not None
     assert np.count_nonzero(np.abs(model.coef_) < 1e-2) >= 1
     assert model.predict(X[:5]).shape == (5,)
+
+def test_logistic_regression_binary_predictions_are_reasonable():
+    rng = np.random.default_rng(42)
+    X = rng.normal(size=(300, 4))
+    logits = 1.0 + X @ np.array([2.0, -1.0, 0.5, 1.5])
+    y = (logits > 0).astype(int)
+
+    custom = LogisticRegression(lr=0.2, lambda_=0.0, max_iter=5000).fit(X, y)
+    sklearn = SklearnLogisticRegression(C=1e6, max_iter=5000).fit(X, y)
+
+    custom_pred = custom.predict(X)
+    sklearn_pred = sklearn.predict(X)
+
+    assert np.mean(custom_pred == sklearn_pred) > 0.98
+    assert custom.predict_proba(X[:7]).shape == (7, 2)
+
+def test_logistic_regression_multiclass_output_shape():
+    rng = np.random.default_rng(42)
+    X = rng.normal(size=(120, 3))
+    y = np.argmax(X @ np.array([[2.0, -1.0, 0.5], [-1.0, 2.0, 0.5], [0.5, -1.0, 2.0]]), axis=1)
+
+    model = LogisticRegression(lr=0.1, max_iter=1000).fit(X, y)
+    probabilities = model.predict_proba(X[:10])
+
+    assert probabilities.shape == (10, 3)
+    assert np.allclose(probabilities.sum(axis=1), 1.0)

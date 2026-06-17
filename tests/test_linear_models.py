@@ -2,12 +2,14 @@ import numpy as np
 from sklearn.linear_model import LinearRegression as SklearnLinearRegression
 from sklearn.linear_model import Ridge as SklearnRidge
 from sklearn.linear_model import LogisticRegression as SklearnLogisticRegression
+from sklearn.naive_bayes import GaussianNB
 
 from src.linear_regression import LinearRegression
 from src.linear_regression_gd import LinearRegressionGD
 from src.ridge_regression import RidgeRegression
 from src.lasso_regression import LassoRegression
 from src.logistic_regression import LogisticRegression
+from src.naive_bayes import GaussianNaiveBayes
 
 def test_linear_regression_matches_sklearn_predictions():
     rng = np.random.default_rng(42)
@@ -83,3 +85,16 @@ def test_logistic_regression_multiclass_output_shape():
 
     assert probabilities.shape == (10, 3)
     assert np.allclose(probabilities.sum(axis=1), 1.0)
+
+def test_gaussian_naive_bayes_matches_sklearn_predictions():
+    rng = np.random.default_rng(42)
+    X = rng.normal(size=(180, 4))
+    y = np.repeat([0, 1, 2], repeats=60)
+    X[y == 1] += 1.5
+    X[y == 2] -= 1.5
+
+    custom = GaussianNaiveBayes().fit(X, y)
+    sklearn = GaussianNB(var_smoothing=0.0).fit(X, y)
+
+    assert np.mean(custom.predict(X) == sklearn.predict(X)) > 0.98
+    assert custom.predict_proba(X[:8]).shape == (8, 3)

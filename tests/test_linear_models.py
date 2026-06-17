@@ -10,6 +10,7 @@ from src.ridge_regression import RidgeRegression
 from src.lasso_regression import LassoRegression
 from src.logistic_regression import LogisticRegression
 from src.naive_bayes import GaussianNaiveBayes
+from src.text_features import BagOfWords, TfidfTransformer
 
 def test_linear_regression_matches_sklearn_predictions():
     rng = np.random.default_rng(42)
@@ -98,3 +99,19 @@ def test_gaussian_naive_bayes_matches_sklearn_predictions():
 
     assert np.mean(custom.predict(X) == sklearn.predict(X)) > 0.98
     assert custom.predict_proba(X[:8]).shape == (8, 3)
+
+def test_text_features_bow_and_tfidf_shapes():
+    documents = [
+        "Cats and dogs are animals",
+        "Dogs can chase cats",
+        "Graphics cards render images",
+    ]
+
+    bow = BagOfWords(max_features=5).fit(documents)
+    counts = bow.transform(documents)
+    tfidf = TfidfTransformer().fit(counts)
+    weights = tfidf.transform(counts)
+
+    assert counts.shape == (3, 5)
+    assert weights.shape == counts.shape
+    assert np.any(weights != 0)

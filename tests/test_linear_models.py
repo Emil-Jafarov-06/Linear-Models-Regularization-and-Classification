@@ -11,6 +11,8 @@ from src.lasso_regression import LassoRegression
 from src.logistic_regression import LogisticRegression
 from src.naive_bayes import GaussianNaiveBayes
 from src.text_features import BagOfWords, TfidfTransformer
+from src.weighted_linear_regression import WeightedLinearRegression
+
 
 def test_linear_regression_matches_sklearn_predictions():
     rng = np.random.default_rng(42)
@@ -115,3 +117,15 @@ def test_text_features_bow_and_tfidf_shapes():
     assert counts.shape == (3, 5)
     assert weights.shape == counts.shape
     assert np.any(weights != 0)
+
+def test_weighted_linear_regression_matches_sklearn_sample_weight():
+    rng = np.random.default_rng(42)
+    X = rng.normal(size=(120, 4))
+    y = 1.2 + X @ np.array([1.5, -2.0, 0.3, 0.7]) + rng.normal(scale=0.1, size=120)
+    sample_weight = rng.uniform(0.2, 3.0, size=120)
+    X_test = rng.normal(size=(10, 4))
+
+    custom = WeightedLinearRegression().fit(X, y, sample_weight)
+    sklearn = SklearnLinearRegression().fit(X, y, sample_weight=sample_weight)
+
+    assert np.allclose(custom.predict(X_test), sklearn.predict(X_test), atol=1e-9)
